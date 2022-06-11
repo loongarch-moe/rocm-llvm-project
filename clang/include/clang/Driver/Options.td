@@ -3973,7 +3973,7 @@ def gdwarf32 : Flag<["-"], "gdwarf32">, Group<g_Group>,
   Visibility<[ClangOption, CC1Option, CC1AsOption]>,
   HelpText<"Enables DWARF32 format for ELF binaries, if debug information emission is enabled.">;
 def gheterogeneous_dwarf : Flag<["-"], "gheterogeneous-dwarf">,
-  Group<g_Group>, Flags<[CC1Option]>,
+  Group<g_Group>, Visibility<[ClangOption, CC1Option, CC1AsOption]>,
   HelpText<"Enable DWARF extensions for heterogeneous debugging">,
   MarshallingInfoFlag<CodeGenOpts<"HeterogeneousDwarf">>;
 def gno_heterogeneous_dwarf : Flag<["-"], "gno-heterogeneous-dwarf">,
