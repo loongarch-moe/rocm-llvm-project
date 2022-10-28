@@ -89,6 +89,18 @@ AMDGPUAsmPrinter::AMDGPUAsmPrinter(TargetMachine &TM,
                                    std::unique_ptr<MCStreamer> Streamer)
     : AsmPrinter(TM, std::move(Streamer)) {
   assert(OutStreamer && "AsmPrinter constructed without streamer");
+
+  if (TM.getTargetTriple().getOS() == Triple::AMDHSA) {
+    if (isHsaAbiVersion2(getGlobalSTI())) {
+      HSAMetadataStream.reset(new HSAMD::MetadataStreamerYamlV2());
+    } else if (isHsaAbiVersion3(getGlobalSTI())) {
+      HSAMetadataStream.reset(new HSAMD::MetadataStreamerMsgPackV3());
+    } else if (isHsaAbiVersion5(getGlobalSTI())) {
+      HSAMetadataStream.reset(new HSAMD::MetadataStreamerMsgPackV5());
+    } else {
+      HSAMetadataStream.reset(new HSAMD::MetadataStreamerMsgPackV4());
+    }
+  }
 }
 
 StringRef AMDGPUAsmPrinter::getPassName() const {
@@ -148,10 +160,6 @@ void AMDGPUAsmPrinter::emitEndOfAsmFile(Module &M) {
   if (!IsTargetStreamerInitialized)
     initTargetStreamer(M);
 
-  // Following code requires TargetStreamer to be present.
-  if (!getTargetStreamer())
-    return;
-
   if (TM.getTargetTriple().getOS() != Triple::AMDHSA ||
       CodeObjectVersion == AMDGPU::AMDHSA_COV2)
     getTargetStreamer()->EmitISAVersion();
@@ -187,7 +195,7 @@ void AMDGPUAsmPrinter::emitFunctionBodyStart() {
 
   // TODO: Which one is called first, emitStartOfAsmFile or
   // emitFunctionBodyStart?
-  if (getTargetStreamer() && !getTargetStreamer()->getTargetID())
+  if (!getTargetStreamer()->getTargetID())
     initializeTargetID(*F.getParent());
 
   const auto &FunctionTargetID = STM.getTargetID();
@@ -329,8 +337,8 @@ void AMDGPUAsmPrinter::emitGlobalVariable(const GlobalVariable *GV) {
 
     emitVisibility(GVSym, GV->getVisibility(), !GV->isDeclaration());
     emitLinkage(GV, GVSym);
-    if (auto TS = getTargetStreamer())
-      TS->emitAMDGPULDS(GVSym, Size, Alignment);
+    auto TS = getTargetStreamer();
+    TS->emitAMDGPULDS(GVSym, Size, Alignment);
     return;
   }
 
