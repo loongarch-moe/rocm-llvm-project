@@ -17,3 +17,20 @@ define {i32, i32} @poison2({i32, i32} %x) {
   %v = insertvalue {i32, i32} poison, i32 %elem, 0
   ret {i32, i32} %v
 }
+
+define {i32, i32} @insert_undef({i32, i32} %x) {
+; CHECK-LABEL: @insert_undef(
+; CHECK-NEXT:    [[V:%.*]] = insertvalue { i32, i32 } [[X:%.*]], i32 undef, 0
+; CHECK-NEXT:    ret { i32, i32 } [[V]]
+;
+  %v = insertvalue {i32, i32} %x, i32 undef, 0
+  ret {i32, i32} %v
+}
+
+define {i32, i32} @insert_undef_into_non_poison({i32, i32} noundef %x) {
+; CHECK-LABEL: @insert_undef_into_non_poison(
+; CHECK-NEXT:    ret { i32, i32 } [[X:%.*]]
+;
+  %v = insertvalue {i32, i32} %x, i32 undef, 0
+  ret {i32, i32} %v
+}
