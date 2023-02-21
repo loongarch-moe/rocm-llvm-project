@@ -76,6 +76,8 @@ public:
                                      const unsigned Align,
                                      const TargetRegisterClass *RC) const;
 
+  bool isCFISavedRegsSpillEnabled() const;
+
   /// Return the end register initially reserved for the scratch buffer in case
   /// spilling is needed.
   MCRegister reservedPrivateSegmentBufferReg(const MachineFunction &MF) const;
@@ -146,8 +148,8 @@ public:
   /// free VGPR lane to spill.
   bool spillSGPR(MachineBasicBlock::iterator MI, int FI, RegScavenger *RS,
                  SlotIndexes *Indexes = nullptr, LiveIntervals *LIS = nullptr,
-                 bool OnlyToVGPR = false,
-                 bool SpillToPhysVGPRLane = false) const;
+                 bool OnlyToVGPR = false, bool SpillToPhysVGPRLane = false,
+                 bool NeedsCFI = false) const;
 
   bool restoreSGPR(MachineBasicBlock::iterator MI, int FI, RegScavenger *RS,
                    SlotIndexes *Indexes = nullptr, LiveIntervals *LIS = nullptr,
@@ -425,8 +427,8 @@ public:
                            unsigned LoadStoreOp, int Index, Register ValueReg,
                            bool ValueIsKill, MCRegister ScratchOffsetReg,
                            int64_t InstrOffset, MachineMemOperand *MMO,
-                           RegScavenger *RS,
-                           LivePhysRegs *LiveRegs = nullptr) const;
+                           RegScavenger *RS, LivePhysRegs *LiveRegs = nullptr,
+                           bool NeedsCFI = false) const;
 
   // Return alignment in register file of first register in a register tuple.
   unsigned getRegClassAlignmentNumBits(const TargetRegisterClass *RC) const {

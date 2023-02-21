@@ -315,8 +315,9 @@ TEST(DIBuilder, CreateStringType) {
       DINode::FlagZero, DISubprogram::SPFlagZero, nullptr);
   DIFile *F = DIB.createFile("main.c", "/");
   StringRef StrName = "string";
-  DIVariable *StringLen = DIB.createAutoVariable(Scope, StrName, F, 0, nullptr,
-                                                 false, DINode::FlagZero, 0);
+  DIVariable *StringLen =
+      DIB.createAutoVariable(Scope, StrName, F, 0, nullptr, false,
+                             DINode::FlagZero, dwarf::DW_MSPACE_LLVM_none, 0);
   auto getDIExpression = [&DIB](int offset) {
     SmallVector<uint64_t, 4> ops;
     ops.push_back(llvm::dwarf::DW_OP_push_object_address);
@@ -728,6 +729,30 @@ TEST(AssignmentTrackingTest, InstrMethods) {
     Metadata *NewID0 = Stores[0]->getMetadata(LLVMContext::MD_DIAssignID);
     EXPECT_NE(NewID0, nullptr);
   }
+}
+
+TEST(IsHeterogeneousDebugTest, EmptyModule) {
+  LLVMContext C;
+  std::unique_ptr<Module> M = parseIR(C, "");
+  EXPECT_FALSE(isHeterogeneousDebug(*M));
+}
+
+TEST(IsHeterogeneousDebugTest, V3Module) {
+  LLVMContext C;
+  std::unique_ptr<Module> M = parseIR(C, R"(
+    !llvm.module.flags = !{!0}
+    !0 = !{i32 2, !"Debug Info Version", i32 3}
+)");
+  EXPECT_FALSE(isHeterogeneousDebug(*M));
+}
+
+TEST(IsHeterogeneousDebugTest, V4Module) {
+  LLVMContext C;
+  std::unique_ptr<Module> M = parseIR(C, R"(
+    !llvm.module.flags = !{!0}
+    !0 = !{i32 2, !"Debug Info Version", i32 4}
+)");
+  EXPECT_TRUE(isHeterogeneousDebug(*M));
 }
 
 } // end namespace
