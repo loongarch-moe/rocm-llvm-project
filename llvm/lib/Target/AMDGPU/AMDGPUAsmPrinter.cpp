@@ -264,9 +264,9 @@ void AMDGPUAsmPrinter::emitFunctionBodyEnd() {
       STM, KernelName, getAmdhsaKernelDescriptor(*MF, CurrentProgramInfo),
       CurrentProgramInfo.NumVGPRsForWavesPerEU,
       CurrentProgramInfo.NumSGPRsForWavesPerEU -
-          IsaInfo::getNumExtraSGPRs(&STM,
-                                    CurrentProgramInfo.VCCUsed,
-                                    CurrentProgramInfo.FlatUsed),
+          IsaInfo::getNumExtraSGPRs(
+              &STM, CurrentProgramInfo.VCCUsed, CurrentProgramInfo.FlatUsed,
+              getTargetStreamer()->getTargetID()->isXnackOnOrAny()),
       CurrentProgramInfo.VCCUsed, CurrentProgramInfo.FlatUsed,
       CodeObjectVersion);
 
@@ -741,7 +741,8 @@ void AMDGPUAsmPrinter::getSIProgramInfo(SIProgramInfo &ProgInfo,
   // duplicated in part in AMDGPUAsmParser::calculateGPRBlocks, and could be
   // unified.
   unsigned ExtraSGPRs = IsaInfo::getNumExtraSGPRs(
-      &STM, ProgInfo.VCCUsed, ProgInfo.FlatUsed);
+      &STM, ProgInfo.VCCUsed, ProgInfo.FlatUsed,
+      getTargetStreamer()->getTargetID()->isXnackOnOrAny());
 
   // Check the addressable register limit before we add ExtraSGPRs.
   if (STM.getGeneration() >= AMDGPUSubtarget::VOLCANIC_ISLANDS &&
