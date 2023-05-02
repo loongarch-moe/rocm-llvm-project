@@ -11,6 +11,7 @@
 #include "GCNSubtarget.h"
 #include "MCTargetDesc/AMDGPUMCTargetDesc.h"
 #include "SIMachineFunctionInfo.h"
+#include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/CodeGen/LivePhysRegs.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineModuleInfo.h"
@@ -28,6 +29,10 @@ static cl::opt<bool> EnableSpillVGPRToAGPR(
   cl::ReallyHidden,
   cl::init(true));
 
+static constexpr unsigned SGPRBitSize = 32;
+static constexpr unsigned SGPRByteSize = SGPRBitSize / 8;
+static constexpr unsigned VGPRLaneBitSize = 32;
+
 // Find a register matching \p RC from \p LiveRegs which is unused and available
 // throughout the function. On failure, returns AMDGPU::NoRegister.
 static MCRegister findUnusedRegister(MachineRegisterInfo &MRI,
@@ -38,6 +43,16 @@ static MCRegister findUnusedRegister(MachineRegisterInfo &MRI,
       return Reg;
   }
   return MCRegister();
+}
+
+static void encodeDwarfRegisterLocation(int DwarfReg, raw_ostream &OS) {
+  assert(DwarfReg >= 0);
+  if (DwarfReg < 32) {
+    OS << uint8_t(dwarf::DW_OP_reg0 + DwarfReg);
+  } else {
+    OS << uint8_t(dwarf::DW_OP_regx);
+    encodeULEB128(DwarfReg, OS);
+  }
 }
 
 // Find a scratch register that we can use in the prologue. We avoid using
@@ -705,9 +720,8 @@ void SIFrameLowering::emitEntryFunctionPrologue(MachineFunction &MF,
         dwarf::DW_CFA_def_cfa_expression,
         3, // length
         static_cast<char>(dwarf::DW_OP_lit0),
-        static_cast<char>(
-            dwarf::DW_OP_lit6), // DW_ASPACE_AMDGPU_private_wave FIXME:
-                                // should be defined elsewhere
+        static_cast<char>(dwarf::DW_OP_lit0 +
+                          dwarf::DW_ASPACE_LLVM_AMDGPU_private_wave),
         static_cast<char>(dwarf::DW_OP_LLVM_form_aspace_address)};
     buildCFI(MBB, I, DL,
              MCCFIInstruction::createEscape(
@@ -2074,19 +2088,6 @@ MachineInstr *SIFrameLowering::buildCFIForRegToRegSpill(
       MCCFIInstruction::createRegister(nullptr, MCRI.getDwarfRegNum(Reg, false),
                                        MCRI.getDwarfRegNum(RegCopy, false)));
 }
-
-static void encodeDwarfRegisterLocation(int DwarfReg, raw_ostream &OS) {
-  if (DwarfReg < 32) {
-    OS << uint8_t(dwarf::DW_OP_reg0 + DwarfReg);
-  } else {
-    OS << uint8_t(dwarf::DW_OP_regx);
-    encodeULEB128(DwarfReg, OS);
-  }
-}
-
-static constexpr unsigned SGPRBitSize = 32;
-static constexpr unsigned SGPRByteSize = SGPRBitSize / 8;
-static constexpr unsigned VGPRLaneBitSize = 32;
 
 MachineInstr *SIFrameLowering::buildCFIForSGPRToVGPRSpill(
     MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI,
