@@ -170,7 +170,6 @@ static_library("LLVMAMDGPUCodeGen") {
     "AMDGPUPrintfRuntimeBinding.cpp",
     "AMDGPUPromoteAlloca.cpp",
     "AMDGPUPromoteKernelArguments.cpp",
-    "AMDGPUPropagateAttributes.cpp",
     "AMDGPURegBankCombiner.cpp",
     "AMDGPURegBankSelect.cpp",
     "AMDGPURegisterBankInfo.cpp",
