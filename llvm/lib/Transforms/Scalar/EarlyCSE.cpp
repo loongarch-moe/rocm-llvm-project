@@ -1476,8 +1476,6 @@ bool EarlyCSE::processNode(DomTreeNode *Node) {
           LLVM_DEBUG(dbgs() << "Skipping due to debug counter\n");
           continue;
         }
-        if (auto *I = dyn_cast<Instruction>(Op))
-          combineMetadataForCSE(I, &Inst, false);
         if (!Inst.use_empty())
           Inst.replaceAllUsesWith(Op);
         salvageKnowledge(&Inst, &AC);
