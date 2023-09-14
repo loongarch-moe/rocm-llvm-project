@@ -12,6 +12,10 @@
 #include <string>
 #include <vector>
 
+#if defined(__loongarch64)
+#include <cstdint>
+#endif
+
 #define MAXPATHSIZE 512
 
 // These search phrases in /sys/bus/pci/devices/*/uevent are found even if

@@ -52,7 +52,12 @@ void HIP::constructHIPFatbinCommand(Compilation &C, const JobAction &JA,
 
   // ToDo: Remove the dummy host binary entry which is required by
   // clang-offload-bundler.
+  #if defined(__x86_64)
   std::string BundlerTargetArg = "-targets=host-x86_64-unknown-linux";
+  #elif defined(__loongarch64)
+  std::string BundlerTargetArg = "-targets=host-loongarch64-unknown-linux";
+  #else
+  #endif
   // AMDGCN:
   // For code object version 2 and 3, the offload kind in bundle ID is 'hip'
   // for backward compatibility. For code object version 4 and greater, the
