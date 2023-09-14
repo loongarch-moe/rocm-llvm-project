@@ -335,9 +335,9 @@ fatbinary(ArrayRef<std::pair<StringRef, StringRef>> InputFiles,
   CmdArgs.push_back(*OffloadBundlerPath);
   CmdArgs.push_back("-type=o");
   CmdArgs.push_back("-bundle-align=4096");
-  #if define(__x86_64)
+  #if defined(__x86_64)
   SmallVector<StringRef> Targets = {"-targets=host-x86_64-unknown-linux"};
-  #elif define(__loongarch64)
+  #elif defined(__loongarch64)
   SmallVector<StringRef> Targets = {"-targets=host-loongarch64-unknown-linux"};
   #else
   #endif
