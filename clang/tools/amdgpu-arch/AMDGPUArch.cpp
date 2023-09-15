@@ -68,7 +68,9 @@ llvm::Error loadHSA() {
   return llvm::Error::success();
 }
 #else
-
+#if defined(__loongarch64)
+#include "hsa.h"
+#else
 #if defined(__has_include)
 #if __has_include("hsa/hsa.h")
 #include "hsa/hsa.h"
@@ -77,7 +79,7 @@ llvm::Error loadHSA() {
 #endif
 #include "hsa/hsa.h"
 #endif
-
+#endif
 llvm::Error loadHSA() { return llvm::Error::success(); }
 #endif
 
