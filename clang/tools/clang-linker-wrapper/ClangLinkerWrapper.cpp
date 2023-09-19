@@ -334,8 +334,12 @@ fatbinary(ArrayRef<std::pair<StringRef, StringRef>> InputFiles,
   CmdArgs.push_back(*OffloadBundlerPath);
   CmdArgs.push_back("-type=o");
   CmdArgs.push_back("-bundle-align=4096");
-
+#if defined(__x86_64)
   SmallVector<StringRef> Targets = {"-targets=host-x86_64-unknown-linux"};
+#elif defined(__loongarch64)
+  SmallVector<StringRef> Targets = {"-targets=host-loongarch64-unknown-linux"};
+#else
+#endif
   for (const auto &[File, Arch] : InputFiles)
     Targets.push_back(Saver.save("hipv4-amdgcn-amd-amdhsa--" + Arch));
   CmdArgs.push_back(Saver.save(llvm::join(Targets, ",")));
@@ -453,6 +457,7 @@ Expected<StringRef> linkDevice(ArrayRef<StringRef> InputFiles,
   case Triple::aarch64_be:
   case Triple::ppc64:
   case Triple::ppc64le:
+  case Triple::loongarch64:
     return generic::clang(InputFiles, Args);
   default:
     return createStringError(inconvertibleErrorCode(),
