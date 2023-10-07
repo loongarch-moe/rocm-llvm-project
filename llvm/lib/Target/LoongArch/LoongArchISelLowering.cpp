@@ -107,6 +107,12 @@ LoongArchTargetLowering::LoongArchTargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::VASTART, MVT::Other, Custom);
   setOperationAction({ISD::VAARG, ISD::VACOPY, ISD::VAEND}, MVT::Other, Expand);
 
+  // Lower f16 conversion operations into library calls
+  setOperationAction(ISD::FP16_TO_FP,        MVT::f32,   Expand);
+  setOperationAction(ISD::FP_TO_FP16,        MVT::f32,   Expand);
+  setOperationAction(ISD::FP16_TO_FP,        MVT::f64,   Expand);
+  setOperationAction(ISD::FP_TO_FP16,        MVT::f64,   Expand);
+
   if (Subtarget.is64Bit()) {
     setOperationAction(ISD::SHL, MVT::i32, Custom);
     setOperationAction(ISD::SRA, MVT::i32, Custom);
@@ -191,8 +197,19 @@ LoongArchTargetLowering::LoongArchTargetLowering(const TargetMachine &TM,
     setOperationAction(ISD::FREM, MVT::f64, Expand);
     setTruncStoreAction(MVT::f64, MVT::f32, Expand);
   }
-
+  setOperationAction(
+      {ISD::VP_MERGE, ISD::VP_SELECT, ISD::VSELECT, ISD::SELECT}, MVT::f16,
+      Custom);
+  setOperationAction(ISD::FP16_TO_FP, MVT::f32, Expand);
+  setOperationAction(ISD::FP_TO_FP16, MVT::f32, Expand);
+  setLoadExtAction(ISD::EXTLOAD, MVT::f32, MVT::f16, Expand);
+  setTruncStoreAction(MVT::f32, MVT::f16, Expand);
+  setOperationAction(ISD::SPLAT_VECTOR, MVT::f16, Custom);
   setOperationAction(ISD::BR_JT, MVT::Other, Expand);
+
+  setLoadExtAction(ISD::EXTLOAD, MVT::f64, MVT::f16, Expand);
+  setTruncStoreAction(MVT::f64, MVT::f16, Expand);
+
 
   setOperationAction(ISD::BR_CC, GRLenVT, Expand);
   setOperationAction(ISD::SELECT_CC, GRLenVT, Expand);
@@ -241,6 +258,10 @@ LoongArchTargetLowering::LoongArchTargetLowering(const TargetMachine &TM,
   setTargetDAGCombine(ISD::SRL);
   if (Subtarget.hasExtLSX())
     setTargetDAGCombine(ISD::INTRINSIC_WO_CHAIN);
+
+  setLibcallName(RTLIB::FPEXT_F16_F32, "__extendhfsf2");
+  setLibcallName(RTLIB::FPROUND_F32_F16, "__truncsfhf2");
+
 }
 
 bool LoongArchTargetLowering::isOffsetFoldingLegal(
@@ -2788,9 +2809,27 @@ SDValue LoongArchTargetLowering::PerformDAGCombine(SDNode *N,
     return performBITREV_WCombine(N, DAG, DCI, Subtarget);
   case ISD::INTRINSIC_WO_CHAIN:
     return performINTRINSIC_WO_CHAINCombine(N, DAG, DCI, Subtarget);
+  // case ISD::FP16_TO_FP:
+    // return performFP16_TO_FP(N, DAG, Subtarget);
+
   }
   return SDValue();
 }
+// // Optimize (fp16_to_fp (fp_to_fp16 X)) to VCVTPS2PH followed by VCVTPH2PS.
+// // Done as a combine because the lowering for fp16_to_fp and fp_to_fp16 produce
+// // extra instructions between the conversion due to going to scalar and back.
+// static SDValue performFP16_TO_FP(SDNode *N, SelectionDAG &DAG,
+//                                  const DAGCombinerInfo &Subtarget) {
+//   SDLoc dl(N);
+//   SDValue Res = DAG.getNode(ISD::SCALAR_TO_VECTOR, dl, MVT::v4f32,
+//                             N->getOperand(0).getOperand(0));
+//   Res = DAG.getNode(X86ISD::CVTPS2PH, dl, MVT::v8i16, Res,
+//                     DAG.getTargetConstant(4, dl, MVT::i32));
+//   Res = DAG.getNode(X86ISD::CVTPH2PS, dl, MVT::v4f32, Res);
+//   return DAG.getNode(ISD::EXTRACT_VECTOR_ELT, dl, MVT::f32, Res,
+//                      DAG.getIntPtrConstant(0, dl));
+// }
+
 
 static MachineBasicBlock *insertDivByZeroTrap(MachineInstr &MI,
                                               MachineBasicBlock *MBB) {

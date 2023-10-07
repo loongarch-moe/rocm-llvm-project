@@ -18,6 +18,13 @@ def SDT_LoongArchMOVGR2FR_W_LA64
     : SDTypeProfile<1, 1, [SDTCisVT<0, f32>, SDTCisVT<1, i64>]>;
 def SDT_LoongArchMOVFR2GR_S_LA64
     : SDTypeProfile<1, 1, [SDTCisVT<0, i64>, SDTCisVT<1, f32>]>;
+
+def SDT_LoongArchMOVHGR2GR_W_LA64
+    : SDTypeProfile<1, 1, [SDTCisVT<0, f16>, SDTCisVT<1, i64>]>;
+
+def SDT_LoongArchMOVHFR2GR_S_LA64
+    : SDTypeProfile<1, 1, [SDTCisVT<0, i64>, SDTCisVT<1, f16>]>;
+
 def SDT_LoongArchFTINT : SDTypeProfile<1, 1, [SDTCisFP<0>, SDTCisFP<1>]>;
 
 def loongarch_movgr2fr_w_la64

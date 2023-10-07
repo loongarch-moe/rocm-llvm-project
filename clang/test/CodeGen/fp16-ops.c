@@ -1,5 +1,5 @@
-// REQUIRES: arm-registered-target
 // RUN: %clang_cc1 -emit-llvm -o - -triple arm-none-linux-gnueabi %s | FileCheck %s --check-prefix=NOTNATIVE --check-prefix=CHECK
+// RUN: %clang_cc1 -emit-llvm -o - -triple loongarch64-linux-gnu %s | FileCheck %s --check-prefix=NOTNATIVE --check-prefix=CHECK
 // RUN: %clang_cc1 -emit-llvm -o - -triple aarch64-none-linux-gnueabi %s | FileCheck %s --check-prefix=NOTNATIVE --check-prefix=CHECK
 // RUN: %clang_cc1 -emit-llvm -o - -triple x86_64-linux-gnu %s | FileCheck %s --check-prefix=NOTNATIVE --check-prefix=CHECK
 // RUN: %clang_cc1 -emit-llvm -o - -triple arm-none-linux-gnueabi -fnative-half-type %s \
